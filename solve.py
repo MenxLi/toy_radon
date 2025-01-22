@@ -15,9 +15,9 @@ class DifferentiableImage(nn.Module):
 
 def vis(model: nn.Module, size: tuple[int, int], device: torch.device = torch.device("cuda")):
     assert size[0] == size[1]
-    coords = torch.meshgrid(torch.arange(size[0], device=device), torch.arange(size[1], device=device), indexing='xy')
-    coords = torch.stack(coords, dim=-1).reshape(-1, 2).to(torch.float32) / size[0]
-    coords = coords * 2 - 1
+    s_coords = torch.linspace(-1, 1, size[0], device=device)
+    coords = torch.meshgrid(s_coords, s_coords, indexing='xy')
+    coords = torch.stack(coords, dim=-1).reshape(-1, 2)
     with torch.no_grad():
         return sample_image(model, coords).reshape(size)
 

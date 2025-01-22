@@ -88,10 +88,11 @@ if __name__ == "__main__":
     im = load_image("shepp_logan.png", (256, 256), "cuda")
 
     # test sampling
-    coords = torch.meshgrid(torch.arange(256, device=im.device), torch.arange(256, device=im.device), indexing='xy')
-    coords = torch.stack(coords, dim=-1).reshape(-1, 2).to(torch.float32) / 255
-    coords = coords * 2 - 1
-    new_im = sample_image(im, coords).reshape(256, 256)
+    sample_size = 192
+    s_coords = torch.linspace(-1, 1, sample_size, device=im.device, dtype=torch.float32)
+    coords = torch.meshgrid(s_coords, s_coords, indexing='xy')
+    coords = torch.stack(coords, dim=-1).reshape(-1, 2).to(torch.float32)
+    new_im = sample_image(im, coords).reshape(sample_size, sample_size)
     save_im(new_im, "sampled.png")
 
     # test sinogram
