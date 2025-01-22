@@ -30,7 +30,7 @@ def sample_image(im: torch.Tensor | nn.Module, coords: torch.Tensor, interp: str
         ).squeeze()
     return grid_sample
 
-def create_sinogram(image: torch.Tensor | nn.Module, angles: torch.Tensor, detector_size: int, detector_spacing: float, n_samples: int):
+def create_sinogram(image: torch.Tensor | nn.Module, angles: torch.Tensor, detector_size: int, detector_spacing: float, n_samples: int, inscribe: bool = False) -> torch.Tensor:
     """
     Create sinogram, assume the detector size is normalized to the space where image coordinates are in range [-1, 1]
     - image (tensor): image tensor
@@ -38,6 +38,8 @@ def create_sinogram(image: torch.Tensor | nn.Module, angles: torch.Tensor, detec
     - angles (tensor): angles to sample sinogram at of shape (n), in radians
     - detector_size (int): size of detector
     - detector_spacing (float): spacing between detectors
+    - n_samples (int): number of samples to take for each ray
+    - inscribe (bool): if True, the sample will be restricted to the inscribed circle, otherwise the circumscribed
     return sinogram tensor of shape (n, detector_size)
     """
     assert len(angles.shape) == 1, "Angles must be 1D tensor"
@@ -50,7 +52,8 @@ def create_sinogram(image: torch.Tensor | nn.Module, angles: torch.Tensor, detec
         return tensor of shape (detector_size, n_samples, 2)
         """
         s_coords_x = torch.linspace(-detector_spacing * detector_size / 2, detector_spacing * detector_size / 2, detector_size, device=device)
-        s_coords_y = torch.linspace(-np.sqrt(2), np.sqrt(2), n_samples, device=device)
+        if inscribe: s_coords_y = torch.linspace(-1, 1, n_samples, device=device)
+        else: s_coords_y = torch.linspace(-np.sqrt(2), np.sqrt(2), n_samples, device=device)
         _s_coords = torch.meshgrid(s_coords_x, s_coords_y, indexing='ij')   # ray for last dimension
         s_coords = torch.stack(_s_coords, dim=-1).reshape(detector_size, n_samples, 2)
         return s_coords
@@ -92,5 +95,5 @@ if __name__ == "__main__":
     save_im(new_im, "sampled.png")
 
     # test sinogram
-    sino = create_sinogram(im, torch.linspace(0, np.pi, 200).to(im.device), 200, 2/len(im), 256)
+    sino = create_sinogram(im, torch.linspace(0, np.pi, 200).to(im.device), 200, 2/len(im), 256, inscribe=True)
     save_im(sino, "sino.png")
